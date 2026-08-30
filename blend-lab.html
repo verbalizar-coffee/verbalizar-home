@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CUP COMPASS ／ BLEND LAB — 配合を計算し、実飲で反証する</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Zen+Old+Mincho:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+@charset "utf-8";
+/* ==========================================================================
+   CUP COMPASS ／ 共通デザインシステム
+   紙は白。書体は明朝で統一（数値と符号のみ等幅）。
+   色は水彩画から採取：墨 #16262A／藍 #16495D／実 #A9302A／葉 #4E6B4A／陽 #C98A2E
+   ========================================================================== */
+:root{
+ --paper:#FFFFFF;
+ --ink:#16262A;
+ --soft:#5C7072;
+ --faint:#8C9C9D;
+ --line:#E3E8E7;
+ --line-2:#CFDADB;
+ --indigo:#16495D;
+ --indigo-m:#3E7C93;
+ --cherry:#A9302A;
+ --cherry-d:#8E241F;
+ --leaf:#4E6B4A;
+ --sun:#C98A2E;
+ --w-blue:#E9F1F4; --w-green:#E7EFE7; --w-sun:#FBF0DA; --w-red:#F8E7E3;
+
+ --fd:"Zen Old Mincho","Hiragino Mincho ProN",serif;   /* 見出しと本文 */
+ --fl:"Cormorant Garamond",serif;                       /* 欧文の銘 */
+ --fm:"IBM Plex Mono",monospace;                        /* 数値・符号 */
+
+ --w:1180px; --gap:24px; --sec:88px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;overflow-x:clip;background:var(--paper);color:var(--ink);
+ font-family:var(--fd);font-weight:400;font-size:16px;line-height:1.95;letter-spacing:.015em;
+ -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+h1,h2,h3,h4,h5{font-family:var(--fd);font-weight:600;margin:0;line-height:1.45;letter-spacing:.01em}
+p{margin:0}
+a{color:inherit;text-decoration:none}
+button,input,select,textarea{font:inherit;color:inherit}
+img{max-width:100%;display:block}
+:focus-visible{outline:2px solid var(--indigo);outline-offset:3px;border-radius:2px}
+
+.wrap{max-width:var(--w);margin:0 auto;padding:0 28px}
+.mono{font-family:var(--fm);font-size:11.5px;letter-spacing:.08em;font-variant-numeric:tabular-nums}
+.eyebrow{font-family:var(--fm);font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--indigo-m)}
+.note{font-size:13.5px;color:var(--soft);line-height:1.85}
+.stat{font-family:var(--fm);font-size:28px;font-weight:500;line-height:1.2;letter-spacing:0}
+.src{font-family:var(--fm);font-size:10px;letter-spacing:.06em;color:var(--faint)}
+
+/* ---------- ヘッダー ---------- */
+header.top{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.93);
+ backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.top-in{max-width:var(--w);margin:0 auto;padding:12px 28px;display:flex;
+ justify-content:space-between;align-items:center;gap:20px}
+.brand{display:flex;align-items:center;gap:12px;flex:0 0 auto}
+.brand .seal{width:34px;height:34px;position:relative;display:grid;place-items:center;flex:0 0 auto}
+.brand .seal svg{position:absolute;inset:0;width:100%;height:100%}
+.brand .seal b{position:relative;font-family:var(--fl);font-weight:400;font-size:16px;color:var(--indigo);line-height:1}
+.brand .name{font-family:var(--fl);font-weight:300;letter-spacing:.28em;font-size:18px;white-space:nowrap}
+.brand .sub{font-family:var(--fm);font-size:9.5px;letter-spacing:.14em;color:var(--faint)}
+.tabs{display:flex;gap:2px;min-width:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button,.tabs a{background:none;border:0;padding:8px 14px;font-size:14.5px;color:var(--soft);
+ cursor:pointer;white-space:nowrap;position:relative;font-family:var(--fd);border-bottom:2px solid transparent}
+.tabs button:hover,.tabs a:hover{color:var(--indigo)}
+.tabs button[aria-current="true"],.tabs a[aria-current="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--cherry)}
+
+/* ---------- 面 ---------- */
+.pane{display:none;padding:34px 0 90px}
+.pane.on{display:block}
+.h-sec{font-size:31px;margin-top:10px;line-height:1.4}
+.lead{margin-top:14px;color:var(--soft);font-size:16px;max-width:68ch;line-height:2}
+.shead{display:flex;align-items:baseline;gap:16px;margin-bottom:24px}
+.shead h2{font-size:25px}
+.shead .rule{flex:1;height:1px;background:var(--line)}
+
+/* ---------- 箱 ---------- */
+.card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:22px}
+.card.feature{background:linear-gradient(170deg,var(--w-blue),#fff 62%);border-color:#CFE0E6}
+.card.tint{background:#FCFDFD}
+.grid{display:grid;gap:20px}
+.stage{border:1px solid var(--line);border-radius:8px;background:#fff;overflow:hidden}
+.scene-frame{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+
+/* ---------- 操作 ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;
+ border:1px solid var(--cherry);background:var(--cherry);color:#fff;padding:12px 22px;
+ font-size:15px;border-radius:2px;transition:.18s;font-family:var(--fd);letter-spacing:.03em}
+.btn:hover{background:var(--cherry-d);border-color:var(--cherry-d)}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line-2)}
+.btn.ghost:hover{border-color:var(--indigo);color:var(--indigo);background:var(--w-blue)}
+.btn.ink{background:var(--indigo);border-color:var(--indigo);color:#fff}
+.btn.ink:hover{background:#0E3345;border-color:#0E3345}
+.btn.sm{padding:8px 14px;font-size:13.5px}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chips button{border:1px solid var(--line-2);background:#fff;padding:7px 14px;font-size:13.5px;
+ border-radius:999px;cursor:pointer;color:var(--soft);font-family:var(--fd);transition:.16s}
+.chips button:hover{border-color:var(--indigo-m);color:var(--indigo)}
+.chips button[aria-pressed="true"]{background:var(--indigo);color:#fff;border-color:var(--indigo)}
+select,input[type=text],input[type=number],textarea{width:100%;padding:11px 12px;border:1px solid var(--line-2);
+ background:#fff;border-radius:2px;font-size:15px;font-family:var(--fd)}
+input[type=range]{width:100%;accent-color:var(--indigo);height:24px}
+label.f{display:block;margin-top:12px}
+label.f>span{display:block;font-size:13px;color:var(--soft);margin-bottom:5px}
+.rowlab{display:flex;justify-content:space-between;gap:12px;font-size:14px;align-items:baseline;margin-top:12px}
+.rowlab b{font-family:var(--fm);font-size:13px;color:var(--indigo);font-weight:500}
+
+/* ---------- 符号 ---------- */
+.pill{font-family:var(--fm);font-size:10px;letter-spacing:.06em;border:1px solid var(--line-2);
+ padding:2px 8px;border-radius:999px;color:var(--soft);display:inline-block;line-height:1.7}
+.pill.good{border-color:var(--leaf);color:var(--leaf)}
+.pill.warn{border-color:var(--cherry);color:var(--cherry)}
+.pill.brass{border-color:var(--indigo-m);color:var(--indigo)}
+.callout{border-left:3px solid var(--indigo);padding:13px 16px;background:var(--w-blue);
+ font-size:14.5px;color:var(--ink);border-radius:0 4px 4px 0}
+.callout.warn{border-color:var(--cherry);background:var(--w-red)}
+.callout.good{border-color:var(--leaf);background:var(--w-green)}
+.bar{height:7px;background:var(--line);position:relative;border-radius:4px;overflow:hidden}
+.bar i{position:absolute;inset:0 auto 0 0;background:var(--indigo-m);display:block}
+
+/* ---------- 表 ---------- */
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:10px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--fm);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
+ color:var(--faint);font-weight:400}
+
+/* ---------- 部品 ---------- */
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--soft);margin-top:8px}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.lib{border:1px solid var(--line);background:#fff;border-radius:6px;padding:15px;display:block;transition:.16s}
+.lib:hover{border-color:var(--indigo-m);background:var(--w-blue)}
+.hidden{display:none}
+
+footer{border-top:1px solid var(--line);padding:30px 0 70px;color:var(--soft);font-size:13px;margin-top:var(--sec)}
+
+/* ---------- 立ち上がり ---------- */
+.rise{opacity:0;transform:translateY(12px);animation:rise .7s cubic-bezier(.2,.7,.3,1) forwards}
+.rise:nth-child(2){animation-delay:.08s}.rise:nth-child(3){animation-delay:.16s}
+@keyframes rise{to{opacity:1;transform:none}}
+
+@media (max-width:1000px){
+ :root{--sec:62px}
+ .grid{grid-template-columns:1fr!important}
+ .h-sec{font-size:25px}
+}
+@media (max-width:560px){
+ body{font-size:15.5px}
+ .wrap{padding:0 20px}
+ .top-in{padding:10px 20px;gap:10px}
+ .brand .name{font-size:13px;letter-spacing:.1em}
+ .brand .seal{width:28px;height:28px}
+ .brand .sub{display:none}
+ .tabs button,.tabs a{padding:7px 8px;font-size:13px}
+ .card{padding:18px}
+ .h-sec{font-size:23px}
+}
+@media (prefers-reduced-motion:reduce){
+ *{animation:none!important;transition:none!important}
+ .rise{opacity:1;transform:none}
+}
+
+</style>
+<style>:root{--w:1220px}
+.part{border:1px solid var(--line);border-radius:6px;padding:14px;margin-bottom:10px;background:#fff}
+</style>
+</head>
+<body>
+<header class="top"><div class="top-in">
+ <div class="brand">
+  <span class="seal" aria-hidden="true"><svg viewBox="0 0 34 34"><circle cx="17" cy="17" r="15.5" fill="#E9F1F4"/>
+   <circle cx="17" cy="17" r="15.5" fill="none" stroke="#3E7C93" stroke-width="1" stroke-dasharray="2 3" opacity=".8"/></svg><b>C</b></span>
+  <span><span class="name">BLEND LAB</span><br><span class="sub">CUP COMPASS v0.5 ／ simulate → predict → falsify</span></span>
+ </div>
+ <nav class="tabs" id="tabs"></nav>
+</div></header>
+<main>
+  <section class="pane on" id="p-scene"><div class="wrap" id="c-scene"></div></section>
+  <section class="pane" id="p-blend"><div class="wrap" id="c-blend"></div></section>
+  <section class="pane" id="p-verify"><div class="wrap" id="c-verify"></div></section>
+</main>
+<footer><div class="wrap"><p>BLEND LAB は、配合と抽出条件から香味を計算し、その予測を実飲で反証するための作業台です。数値は決定論的な真値ではありません。表示される予測区間と必要被験者数を確認したうえで使ってください。</p></div></footer>
+
+<script>
+/* ==========================================================================
+   CUP COMPASS ／ 作画ライブラリ
+   二つの画風だけを使う。混ぜない。
+     WC … 水彩（産地・植物・風景・器）  下塗り→本塗り→縁の濃まり→墨線→しずく
+     DG … 図解（抽出・断面・グラフ・地図）  白地に細い墨線と等幅の注記だけ
+   ========================================================================== */
+(function(global){
+"use strict";
+
+/* 決定論的な乱数（同じ種なら同じ絵になる） */
+function rng(seed){let s=seed|0||1;return function(){s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);
+  t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};}
+
+/* ---------------------------------------------------------------- 共通色 */
+const C={
+  ink:"#16262A", line:"#CFDADB", faint:"#8C9C9D",
+  indigo:"#16495D", indigoM:"#3E7C93", indigoW:"#DCEAF0",
+  cherry:"#A9302A", cherryL:"#C4453C",
+  leaf:"#4E6B4A", leafL:"#6E8B54", leafD:"#38553B", leafY:"#8CA059",
+  sun:"#C98A2E", sunW:"#F7E3B8",
+  bark:"#6E5334", soil:"#8A5F3C", roast:"#7E4520",
+  paper:"#FFFFFF"
+};
+
+/* ======================================================================
+   WC ── 水彩
+   ====================================================================== */
+const WC={
+ C:C,
+ /* 一枚の絵につき一度だけ呼ぶ。id は絵ごとに変えること */
+ defs(id){
+  return `<defs>
+   <filter id="wcE${id}" x="-30%" y="-30%" width="160%" height="160%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.014 0.021" numOctaves="5" seed="${id*13+7}" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="16" xChannelSelector="R" yChannelSelector="G"/>
+    <feGaussianBlur stdDeviation="0.7"/>
+   </filter>
+   <filter id="wcM${id}" x="-25%" y="-25%" width="150%" height="150%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.026 0.034" numOctaves="4" seed="${id*17+5}" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="6" xChannelSelector="R" yChannelSelector="G"/>
+    <feGaussianBlur stdDeviation="0.5"/>
+   </filter>
+   <filter id="wcS${id}" x="-40%" y="-40%" width="180%" height="180%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.009" numOctaves="4" seed="${id*29+3}" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="26" xChannelSelector="R" yChannelSelector="G"/>
+    <feGaussianBlur stdDeviation="7"/>
+   </filter>
+   <filter id="wcG${id}" x="-10%" y="-10%" width="120%" height="120%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" seed="${id*7+11}" result="g"/>
+    <feColorMatrix in="g" type="saturate" values="0"/>
+    <feComponentTransfer><feFuncA type="linear" slope="0.10"/></feComponentTransfer>
+    <feComposite operator="in" in2="SourceGraphic"/>
+   </filter>
+  </defs>`;
+ },
+ /* 小さな形の本塗り（にじみを控えめに） */
+ washM(id,d,color,op){
+  const o=op==null?.86:op;
+  return `<g filter="url(#wcM${id})"><path d="${d}" fill="${color}" opacity="${o}"/>`
+   +`<path d="${d}" fill="none" stroke="${color}" stroke-width="1.6" opacity="${Math.min(1,o+.1)}"/></g>`;
+ },
+ /* 紙のにじみ（背景に敷く淡い色だまり） */
+ bloom(id,cx,cy,rx,ry,color,op){
+  return `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${color}" opacity="${op==null?.55:op}" filter="url(#wcS${id})"/>`;
+ },
+ /* 本塗り＋縁の濃まり。d は閉じたパス */
+ wash(id,d,color,op,edge){
+  const o=op==null?.82:op;
+  return `<g filter="url(#wcE${id})"><path d="${d}" fill="${color}" opacity="${o}"/>`
+   +(edge===false?"":`<path d="${d}" fill="none" stroke="${color}" stroke-width="2.4" opacity="${Math.min(1,o+.14)}"/>`)
+   +`</g>`;
+ },
+ /* 葉：基部(0,0)から先端へ伸びる。角度は度 */
+ leafPath(len,wide){
+  const w=wide/2;
+  return `M0,0 C${w*1.05},${-len*.22} ${w*.92},${-len*.68} 0,${-len} `
+        +`C${-w*.92},${-len*.68} ${-w*1.05},${-len*.22} 0,0 Z`;
+ },
+ leaf(id,x,y,ang,len,wide,color,vein){
+  const d=WC.leafPath(len,wide);
+  return `<g transform="translate(${x},${y}) rotate(${ang})">
+   ${WC.wash(id,d,color,.86)}
+   <path d="M0,-2 C${wide*.06},${-len*.4} ${wide*.04},${-len*.72} 0,${-len+3}" fill="none"
+     stroke="${vein||C.leafD}" stroke-width="1" opacity=".55"/>
+   ${[.26,.44,.62,.78].map(t=>{const yy=-len*t, xx=wide*.40*(1-Math.abs(t-.5)*1.1);
+     return `<path d="M0,${yy.toFixed(1)} q${(xx*.6).toFixed(1)},${(-len*.05).toFixed(1)} ${xx.toFixed(1)},${(-len*.10).toFixed(1)}
+       M0,${yy.toFixed(1)} q${(-xx*.6).toFixed(1)},${(-len*.05).toFixed(1)} ${(-xx).toFixed(1)},${(-len*.10).toFixed(1)}"
+       fill="none" stroke="${vein||C.leafD}" stroke-width=".7" opacity=".34"/>`;}).join("")}
+   <path d="${d}" fill="none" stroke="${C.ink}" stroke-width=".9" opacity=".42"/></g>`;
+ },
+ /* コーヒーチェリー */
+ cherry(id,x,y,r,ripe){
+  const col=ripe===false?C.leafY:(r%2?C.cherry:C.cherryL);
+  return `<g transform="translate(${x},${y})">
+   ${WC.washM(id,`M0,${-r} a${r},${r} 0 1,0 .1,0 Z`,col,.9)}
+   <circle r="${r}" fill="none" stroke="${C.ink}" stroke-width=".8" opacity=".45"/>
+   <ellipse cx="${-r*.3}" cy="${-r*.34}" rx="${r*.3}" ry="${r*.22}" fill="#fff" opacity=".55"/></g>`;
+ },
+ /* 枝：葉が対生し、実が房になる */
+ branch(id,x,y,h,ang,scale,seed){
+  const r=rng(seed||9), s=scale||1;
+  let o=`<g transform="translate(${x},${y}) rotate(${ang||0}) scale(${s})">`;
+  o+=`<path d="M0,0 C${-h*.03},${-h*.35} ${h*.04},${-h*.7} 0,${-h}" fill="none"
+       stroke="${C.bark}" stroke-width="${(3.4).toFixed(1)}" stroke-linecap="round"/>`;
+  const n=5;
+  for(let i=0;i<n;i++){
+   const t=.18+i*(.78/n), yy=-h*t, L=h*(.30-.02*i)*(.85+r()*.3), W=L*.42;
+   o+=WC.leaf(id, 2, yy, 62+r()*16, L, W, i%2?C.leaf:C.leafL);
+   o+=WC.leaf(id,-2, yy,-62-r()*16, L, W, i%2?C.leafL:C.leafD);
+   if(i>0&&i<n-1){
+    const cr=h*.033;
+    o+=WC.cherry(id, 7, yy+cr*.4, cr, r()>.25);
+    o+=WC.cherry(id,-8, yy+cr*1.5, cr*.92, r()>.3);
+   }
+  }
+  o+=WC.leaf(id,0,-h+2,4,h*.2,h*.085,C.leafL);
+  return o+"</g>";
+ },
+ /* しずく（絵の下に落ちる縦の垂れ） */
+ drip(x,y,len,color,w){
+  const W=w||3;
+  return `<g opacity=".55"><path d="M${x-W/2},${y} L${x+W/2},${y} L${x+W*.3},${y+len} L${x-W*.3},${y+len} Z" fill="${color}"/>
+   <circle cx="${x}" cy="${y+len}" r="${W*.75}" fill="${color}"/></g>`;
+ },
+ /* 飛沫 */
+ splash(cx,cy,spread,n,color,seed){
+  const r=rng(seed||31);let o="";
+  for(let i=0;i<n;i++){
+   const a=r()*6.2832, d=Math.pow(r(),.6)*spread;
+   o+=`<circle cx="${(cx+Math.cos(a)*d).toFixed(1)}" cy="${(cy+Math.sin(a)*d*.8).toFixed(1)}"
+        r="${(.9+r()*2.6).toFixed(1)}" fill="${color}" opacity="${(.25+r()*.5).toFixed(2)}"/>`;
+  }
+  return o;
+ },
+ /* 紙の粒子（全体にうっすら） */
+ grain(id,w,h){return `<rect width="${w}" height="${h}" fill="${C.ink}" filter="url(#wcG${id})" opacity=".5"/>`;}
+};
+
+/* ======================================================================
+   DG ── 図解
+   ====================================================================== */
+const DG={
+ C:C,
+ defs(id){
+  return `<defs>
+   <marker id="dgA${id}" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+    <path d="M0,1 L7,4 L0,7" fill="none" stroke="${C.indigo}" stroke-width="1.2" stroke-linecap="round"/></marker>
+   <pattern id="dgH${id}" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+    <line x1="0" y1="0" x2="0" y2="6" stroke="${C.indigoM}" stroke-width="1" opacity=".35"/></pattern>
+  </defs>`;
+ },
+ label(x,y,t,anchor,color,size){
+  return `<text x="${x}" y="${y}" font-family="IBM Plex Mono, monospace" font-size="${size||9.5}"
+   letter-spacing="1" text-anchor="${anchor||"start"}" fill="${color||C.faint}">${t}</text>`;
+ },
+ jp(x,y,t,anchor,color,size){
+  return `<text x="${x}" y="${y}" font-family="Zen Old Mincho, serif" font-size="${size||12}"
+   text-anchor="${anchor||"start"}" fill="${color||C.soft||"#5C7072"}">${t}</text>`;
+ },
+ leader(x1,y1,x2,y2){
+  return `<path d="M${x1},${y1} L${x2},${y2}" fill="none" stroke="${C.line}" stroke-width="1"/>`;
+ },
+ /* 寸法線（縦） */
+ dimV(id,x,y1,y2,t){
+  return `<path d="M${x},${y1} L${x},${y2}" stroke="${C.indigoM}" stroke-width="1" stroke-dasharray="4 3"/>
+   <path d="M${x-3},${y1+4} l3,-4 l3,4 M${x-3},${y2-4} l3,4 l3,-4" fill="none" stroke="${C.indigoM}" stroke-width="1"/>
+   ${DG.label(x-7,(y1+y2)/2+3,t,"end",C.indigoM)}`;
+ },
+ grid(x,y,w,h,step){
+  let o="";
+  for(let gx=x;gx<=x+w+.1;gx+=step) o+=`<line x1="${gx}" y1="${y}" x2="${gx}" y2="${y+h}" stroke="${C.line}" stroke-width=".6" opacity=".7"/>`;
+  for(let gy=y;gy<=y+h+.1;gy+=step) o+=`<line x1="${x}" y1="${gy}" x2="${x+w}" y2="${gy}" stroke="${C.line}" stroke-width=".6" opacity=".7"/>`;
+  return o;
+ },
+ /* 粉の粒（断面図用・実寸比） */
+ grains(x0,x1,y0,y1,n,d,seed,widthAt){
+  const r=rng(seed||17);let o="";
+  const list=[];
+  for(let i=0;i<n;i++){
+   const lg=Math.exp(Math.log(d)+(r()*2-1)*.62);
+   list.push({u:r(),v:r(),size:Math.max(110,Math.min(2000,lg)),fine:lg<d*.42,tone:r()});
+  }
+  list.sort((a,b)=>(a.fine?1:0)-(b.fine?1:0));
+  list.forEach(q=>{
+   const y=y0+q.v*(y1-y0);
+   const hw=widthAt?widthAt(y)/2-4:(x1-x0)/2;
+   if(hw<3) return;
+   const cx=widthAt?(x0+x1)/2+(q.u*2-1)*hw:x0+q.u*(x1-x0);
+   const rr=Math.max(.9,Math.min(7,q.size/1250*8));
+   const base=q.fine?[86,60,38]:[150,106,68];
+   const sh=1-q.tone*.22;
+   o+=`<circle cx="${cx.toFixed(1)}" cy="${y.toFixed(1)}" r="${rr.toFixed(1)}"
+        fill="rgb(${Math.round(base[0]*sh)},${Math.round(base[1]*sh)},${Math.round(base[2]*sh)})"
+        stroke="rgba(22,38,42,.35)" stroke-width=".5"/>`;
+  });
+  return o;
+ }
+};
+
+global.WC=WC; global.DG=DG; global.CCC=C; global.ccRng=rng;
+})(window);
+
+</script>
+<script>
+/* ==========================================================================
+   BLEND MODEL v0.4  —  「ブレンドは加重平均にならない」を計算で示すための最小モデル
+   層1 焙煎化学   : 生豆組成 → 焙煎度pによる成分変換
+   層2 粉砕物理   : 同一設定でも焙煎度で粒径が変わる（硬さの差）
+   層3 抽出速度論 : 成分別の一次速度式（温度アレニウス・粒径逆比例）
+   層4 知覚       : べき法則＋交差抑制（甘味が苦味を抑える等）
+   ========================================================================== */
+const BEANS=[
+ {id:"et",name:"Ethiopia Yirgacheffe",short:"エチオピア",process:"ナチュラル",
+  comp:{citric:9.0,malic:6.2,acetic:2.6,sucrose:80,cga:66,caffeine:12,lipid:150,poly:250,
+        vol:{floral:9,fruity:8,nutty:2,cocoa:1,spice:1}}, hard:1.10},
+ {id:"br",name:"Brazil Cerrado",short:"ブラジル",process:"パルプドナチュラル",
+  comp:{citric:3.0,malic:3.0,acetic:1.4,sucrose:72,cga:54,caffeine:11,lipid:168,poly:262,
+        vol:{floral:1,fruity:2,nutty:8,cocoa:6,spice:2}}, hard:0.92},
+ {id:"co",name:"Colombia Huila",short:"コロンビア",process:"ウォッシュト",
+  comp:{citric:6.2,malic:5.0,acetic:1.8,sucrose:76,cga:60,caffeine:13,lipid:156,poly:256,
+        vol:{floral:3,fruity:4,nutty:5,cocoa:5,spice:2}}, hard:1.02},
+ {id:"gt",name:"Guatemala Antigua",short:"グアテマラ",process:"ウォッシュト",
+  comp:{citric:6.6,malic:5.4,acetic:1.7,sucrose:77,cga:62,caffeine:12.5,lipid:158,poly:258,
+        vol:{floral:3,fruity:3,nutty:5,cocoa:5,spice:2}}, hard:1.05},
+ {id:"su",name:"Sumatra Mandheling",short:"スマトラ",process:"スマトラ式",
+  comp:{citric:1.8,malic:2.0,acetic:2.4,sucrose:66,cga:50,caffeine:12,lipid:178,poly:266,
+        vol:{floral:0.5,fruity:1.5,nutty:4,cocoa:5,spice:7}}, hard:0.88}
+];
+
+/* --- 層1：焙煎度 p(0=浅 … 1=深) による成分変換 ------------------------- */
+function roasted(bean,p){
+  const c=bean.comp, e=Math.exp;
+  const citric=c.citric*e(-2.2*p), malic=c.malic*e(-2.4*p);
+  const acetic=c.acetic*(1+1.8*p*(1-p))*e(-0.5*p);
+  const cga=c.cga*e(-1.9*p);                       // 残存クロロゲン酸
+  const quinic=c.cga*0.34*Math.pow(p,1.2);         // 分解生成（渋・収れん）
+  const lactone=c.cga*0.30*4*p*(1-p);              // 中煎りで極大（苦味の主役）
+  const phenyl=c.cga*0.24*Math.pow(Math.max(0,p-0.45),1.5)*3.2; // 深煎りの重い苦味
+  const sucrose=c.sucrose*e(-5.2*p);               // 中煎りでほぼ消える
+  const caramel=c.sucrose*0.95*Math.pow(4*p*(1-p),0.8)+c.sucrose*0.10*p;
+  const poly=c.poly*(0.80+0.26*p);                 // メラノイジン・多糖
+  const fines=1+0.30*p;                            // 深煎りほど脆く微粉が増える
+  const sol=0.86+0.24*p;                           // 可溶化しやすさ
+  const vs=0.45+1.55*p-1.45*p*p;                   // 香気総量は中煎り付近で極大
+  const v=c.vol;
+  const vol={ floral:v.floral*e(-2.6*p)*vs, fruity:v.fruity*e(-1.7*p)*vs,
+              nutty:v.nutty*(0.6+1.5*p*(1-0.5*p))*vs, cocoa:v.cocoa*(0.4+1.9*p*(1-0.4*p))*vs,
+              spice:v.spice*(0.5+1.5*p)*vs, roasty:3.2*Math.pow(p,1.5)*vs };
+  return {citric,malic,acetic,cga,quinic,lactone,phenyl,sucrose,caramel,poly,
+          caffeine:c.caffeine,lipid:c.lipid,fines,sol,vol,p,hard:bean.hard};
+}
+
+/* --- 層2＋3：粒径と抽出速度 ------------------------------------------- */
+const K={citric:.0075,malic:.0075,acetic:.0085,quinic:.0060,cga:.0040,lactone:.0038,
+         phenyl:.0022,sucrose:.0060,caramel:.0038,poly:.0025,caffeine:.0045,lipid:.0016};
+const EA=35000, R=8.314, T0=273.15+93, D0=600;
+
+function extractOne(rb,{d,temp,time,agit}){
+  const di=d*(1+0.20*(0.5-rb.p))*rb.hard;
+  const tf=Math.exp(EA/R*(1/T0-1/(273.15+temp)));
+  const out={};
+  for(const k in K){
+    const keff=K[k]*(D0/di)*tf*agit*(0.85+0.30*rb.fines/1.2);
+    out[k]=(rb[k]||0)*(1-Math.exp(-keff*time))*rb.sol;
+  }
+  out.lipid=(rb.lipid||0)*(1-Math.exp(-K.lipid*(D0/di)*tf*agit*time))*0.22;
+  out._d=di;
+  const retain=(0.55+0.45*(temp-78)/18)*Math.exp(-time/900);
+  out.vol={}; let vt=0;
+  for(const k in rb.vol){ out.vol[k]=rb.vol[k]*retain*rb.sol; vt+=out.vol[k]; }
+  out._volTotal=vt;
+  return out;
+}
+
+/* --- ブレンド：カップ内比率は投入比率と一致しない ---------------------- */
+function simulate(recipe){
+  const {dose,water,d,temp,time,agit=1.0,kh=25,retain=2.0}=recipe;
+  const liquid=Math.max(1,water-dose*retain);
+  const tot={}, cup=[]; let solidsMg=0;
+  const keys=["citric","malic","acetic","quinic","cga","lactone","phenyl","sucrose","caramel","poly","caffeine","lipid"];
+  keys.forEach(k=>tot[k]=0);
+  const volTot={floral:0,fruity:0,nutty:0,cocoa:0,spice:0,roasty:0};
+  recipe.parts.forEach(pt=>{
+    if(pt.ratio<=0) return;
+    const rb=roasted(pt.bean,pt.p), ex=extractOne(rb,{d,temp,time,agit});
+    const g=dose*pt.ratio;
+    let mine=0;
+    keys.forEach(k=>{const m=(ex[k]||0)*g; tot[k]+=m; mine+=m;});
+    for(const k in volTot) volTot[k]+=(ex.vol[k]||0)*g;
+    solidsMg+=mine;
+    cup.push({id:pt.bean.id,name:pt.bean.short,in:pt.ratio,mg:mine,d:ex._d,p:pt.p});
+  });
+  cup.forEach(c=>c.out=solidsMg?c.mg/solidsMg:0);
+  const ey=solidsMg/(dose*1000)*100;
+  const tds=solidsMg/(liquid*1000)*100;
+  const conc={}; keys.forEach(k=>conc[k]=tot[k]/liquid);
+  const volC={}; let volT=0; for(const k in volTot){volC[k]=volTot[k]/liquid; volT+=volC[k];}
+  return {ey,tds,liquid,cup,conc,volC,volT,solidsMg};
+}
+
+/* --- 層4：知覚（べき法則＋交差抑制） ---------------------------------- */
+const CAL={acidity:1.00,bitterness:1.00,sweetness:1.00,body:1.00,aroma:1.00};
+const VW={floral:3.2,fruity:2.4,nutty:0.8,cocoa:0.9,spice:0.7,roasty:0.35};
+function perceive(sim,{kh=25,bias={}}={}){
+  const c=sim.conc, v=sim.volC;
+  let vw=0; for(const k in VW) vw+=(v[k]||0)*VW[k];
+  const acidRaw=Math.pow(c.citric*1.0+c.malic*0.95+c.acetic*1.6,0.81)*13.8;
+  const bitRaw =Math.pow(c.caffeine*0.55+c.lactone*1.5+c.phenyl*4.0+c.cga*0.15+c.quinic*1.4,0.90)*2.95;
+  const swRaw  =Math.pow(c.sucrose*1.0+c.caramel*1.0+c.poly*0.075,0.80)*2.55;
+  const bodyRaw=Math.pow(c.poly*0.25+c.lipid*1.5,1.18)*1.50;
+  const arRaw  =Math.pow(vw,0.72)*7.35;
+  const buffer=1/(1+0.0085*kh);
+  let acidity   =acidRaw*buffer-0.10*swRaw-0.16*bitRaw;
+  let bitterness=bitRaw-0.18*swRaw+0.04*acidRaw;
+  let sweetness =swRaw-0.14*bitRaw-0.04*acidRaw+0.25*(v.cocoa+v.fruity);
+  let body      =bodyRaw+0.04*bitRaw;
+  let aroma     =arRaw-0.04*bitRaw;
+  const o={acidity,bitterness,sweetness,body,aroma};
+  for(const k in o) o[k]=Math.max(0,Math.min(10,o[k]*CAL[k]+(bias[k]||0)));
+  return o;
+}
+
+/* --- 参照：単品ごとの知覚を投入比率で加重平均した「素朴な予測」 -------- */
+function linearBlend(recipe){
+  const acc={acidity:0,bitterness:0,sweetness:0,body:0,aroma:0};
+  recipe.parts.forEach(pt=>{
+    if(pt.ratio<=0) return;
+    const one=Object.assign({},recipe,{parts:[{bean:pt.bean,ratio:1,p:pt.p}]});
+    const s=perceive(simulate(one),{kh:recipe.kh});
+    for(const k in acc) acc[k]+=s[k]*pt.ratio;
+  });
+  return acc;
+}
+
+/* --- 不確実性：モンテカルロ ------------------------------------------- */
+function jitter(v,pct,rnd){return v*(1+(rnd()*2-1)*pct);}
+function mulberry(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};}
+function montecarlo(recipe,n=180,seed=7){
+  const rnd=mulberry(seed), axes=["acidity","bitterness","sweetness","body","aroma"], acc={};
+  axes.forEach(a=>acc[a]=[]); const eys=[],tdss=[];
+  for(let i=0;i<n;i++){
+    const r=JSON.parse(JSON.stringify({dose:recipe.dose,water:recipe.water,d:recipe.d,temp:recipe.temp,time:recipe.time,agit:recipe.agit,kh:recipe.kh,retain:recipe.retain}));
+    r.parts=recipe.parts.map(pt=>({bean:{...pt.bean,comp:JSON.parse(JSON.stringify(pt.bean.comp)),hard:jitter(pt.bean.hard,.05,rnd)},ratio:pt.ratio,p:Math.max(0,Math.min(1,jitter(pt.p,.07,rnd)))}));
+    r.parts.forEach(pt=>{for(const k in pt.bean.comp){ if(typeof pt.bean.comp[k]==="number") pt.bean.comp[k]=jitter(pt.bean.comp[k],.08,rnd); }});
+    r.d=jitter(r.d,.10,rnd); r.temp=r.temp+(rnd()*2-1)*1.5; r.time=jitter(r.time,.06,rnd);
+    const s=perceive(simulate(r),{kh:r.kh});
+    axes.forEach(a=>acc[a].push(s[a]));
+    const sim=simulate(r); eys.push(sim.ey); tdss.push(sim.tds);
+  }
+  const pct=(arr,q)=>{const s=[...arr].sort((a,b)=>a-b);return s[Math.floor(q*(s.length-1))];};
+  const out={};
+  axes.forEach(a=>out[a]={lo:pct(acc[a],.05),hi:pct(acc[a],.95)});
+  out.ey={lo:pct(eys,.05),hi:pct(eys,.95)}; out.tds={lo:pct(tdss,.05),hi:pct(tdss,.95)};
+  return out;
+}
+
+/* --- 目標への最適化（粗いグリッド探索） ------------------------------- */
+function optimize(target,beans,base){
+  const best={score:1e9};
+  const temps=[88,90,92,94], grinds=[450,520,600,680];
+  const n=beans.length;
+  const combos=[];
+  if(n===2){ for(let a=0;a<=10;a++) combos.push([a/10,1-a/10]); }
+  else { for(let a=0;a<=10;a++) for(let b=0;b<=10-a;b++) combos.push([a/10,b/10,(10-a-b)/10]); }
+  combos.forEach(cb=>{
+    temps.forEach(temp=>grinds.forEach(d=>{
+      const r=Object.assign({},base,{temp,d,parts:beans.map((bp,i)=>({bean:bp.bean,ratio:cb[i],p:bp.p}))});
+      const s=perceive(simulate(r),{kh:base.kh});
+      let sc=0; for(const k in target) sc+=Math.pow((s[k]-target[k])*(k==="acidity"?1.2:1),2);
+      if(sc<best.score) Object.assign(best,{score:sc,ratios:cb,temp,d,sensory:s});
+    }));
+  });
+  return best;
+}
+
+/* --- 検証統計 --------------------------------------------------------- */
+function binomTail(n,k,p){ let s=0; for(let i=k;i<=n;i++){ s+=comb(n,i)*Math.pow(p,i)*Math.pow(1-p,n-i); } return s; }
+function comb(n,k){let r=1;for(let i=1;i<=k;i++)r=r*(n-k+i)/i;return r;}
+function triangleCritical(n,alpha=0.05){ for(let k=Math.ceil(n/3);k<=n;k++){ if(binomTail(n,k,1/3)<=alpha) return k; } return n; }
+function sampleSize(delta,sd,alpha=0.05,power=0.8){ const z=1.959964,zb=0.8416; return Math.ceil(2*Math.pow(z+zb,2)*sd*sd/(delta*delta)); }
+
+</script>
+<script>
+(function(){
+"use strict";
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const AX=[["acidity","酸味"],["bitterness","苦味"],["sweetness","甘さ"],["body","コク"],["aroma","香り"]];
+const TABS=[["scene","場面を組む"],["blend","配合を設計する"],["verify","予測を検証する"]];
+const METHODS={
+ "V60（円錐）":{d:550,temp:92,time:165,agit:1.15,retain:2.0,dose:15,water:240},
+ "台形ドリッパー":{d:600,temp:90,time:180,agit:1.05,retain:2.0,dose:16,water:250},
+ "フレンチプレス":{d:850,temp:93,time:240,agit:1.0,retain:2.2,dose:17,water:280},
+ "エアロプレス":{d:500,temp:85,time:105,agit:1.2,retain:1.8,dose:15,water:220}
+};
+const S={
+ tab:"scene", hour:7, weather:"clear", company:"alone", vessel:"mug", act:"read",
+ target:{acidity:3,bitterness:4,sweetness:7,body:5.5,aroma:7},
+ parts:[{id:"et",ratio:.35,p:.28},{id:"br",ratio:.65,p:.55}],
+ method:"V60（円錐）", d:550, temp:92, time:165, kh:25, dose:15, water:240,
+ registered:null, records:[], bias:{acidity:0,bitterness:0,sweetness:0,body:0,aroma:0},
+ sd:1.2, panelN:12, saved:{}
+};
+const bean=id=>BEANS.find(b=>b.id===id);
+function recipe(){
+ const m=METHODS[S.method];
+ return {parts:S.parts.filter(p=>p.ratio>0).map(p=>({bean:bean(p.id),ratio:p.ratio,p:p.p})),
+   dose:S.dose,water:S.water,d:S.d,temp:S.temp,time:S.time,agit:m.agit,kh:S.kh,retain:m.retain};
+}
+function normalize(){const t=S.parts.reduce((a,p)=>a+p.ratio,0)||1;S.parts.forEach(p=>p.ratio=p.ratio/t);}
+
+/* ==================== 場面（水彩） ==================== */
+function skyWash(h,weather){
+ if(h<6||h>=20) return ["#C7D2E4","#E3E7EE"];
+ if(h<9)  return ["#F6E0C0","#EAF0F0"];
+ if(h<15) return ["#DCEAF2","#F1F6F4"];
+ if(h<18) return ["#EAF0F4","#F7F2E8"];
+ return ["#F2D6CF","#E6E4EC"];
+}
+function sceneSVG(){
+ const id=90, W=660,H=430, h=S.hour, night=(h<6||h>=19);
+ const sky=skyWash(h,S.weather);
+ const sunT=clamp((h-6)/12,0,1), sunX=180+sunT*300, sunY=180-Math.sin(sunT*Math.PI)*96;
+ const cups={
+  mug:`${WC.washM(id,"M-46,-30 L4,-30 L2,24 Q2,30 -6,30 L-38,30 Q-46,30 -46,24 Z","#F2EFE6",.95)}
+    <path d="M-46,-30 L4,-30 L2,24 Q2,30 -6,30 L-38,30 Q-46,30 -46,24 Z" fill="none" stroke="#16262A" stroke-width="1.5"/>
+    <path d="M4,-16 q22,3 22,18 t-22,18" fill="none" stroke="#16262A" stroke-width="1.5"/>
+    ${WC.washM(id,"M-41,-24 L-1,-24 L-2,-8 L-40,-8 Z","#7E4520",.8)}`,
+  cup:`${WC.washM(id,"M-44,-20 L2,-20 L0,14 Q0,20 -8,20 L-36,20 Q-44,20 -44,14 Z","#F7F4EC",.95)}
+    <path d="M-44,-20 L2,-20 L0,14 Q0,20 -8,20 L-36,20 Q-44,20 -44,14 Z" fill="none" stroke="#16262A" stroke-width="1.5"/>
+    <ellipse cx="-21" cy="28" rx="36" ry="7" fill="#fff" stroke="#16262A" stroke-width="1.3"/>
+    <path d="M2,-10 q18,3 18,14 t-18,14" fill="none" stroke="#16262A" stroke-width="1.4"/>
+    ${WC.washM(id,"M-39,-14 L-3,-14 L-4,-2 L-38,-2 Z","#7E4520",.78)}`,
+  glass:`${WC.washM(id,"M-42,-34 L0,-34 L-2,26 Q-2,32 -10,32 L-34,32 Q-42,32 -42,26 Z","#EAF2F5",.6)}
+    <path d="M-42,-34 L0,-34 L-2,26 Q-2,32 -10,32 L-34,32 Q-42,32 -42,26 Z" fill="none" stroke="#16262A" stroke-width="1.5"/>
+    ${WC.washM(id,"M-39,-8 L-3,-8 L-4,22 Q-4,26 -11,26 L-33,26 Q-38,26 -38,22 Z","#8A5230",.7)}`
+ };
+ const steam=S.vessel==="glass"?"":`<g stroke="#9FB6B8" stroke-width="1.8" fill="none" stroke-linecap="round" opacity=".85">
+   <path d="M-34,-42 q8,-12 0,-24 t0,-16"/><path d="M-20,-46 q8,-12 0,-24 t0,-14"/></g>`;
+ const second=S.company!=="alone"?`<g transform="translate(452,356) scale(.84)">${cups[S.vessel]}</g>`:"";
+ const third=S.company==="guests"?`<g transform="translate(540,350) scale(.72)">${cups[S.vessel]}</g>`:"";
+ const book=S.act==="read"?`<g transform="translate(146,364)">
+   ${WC.washM(id,"M0,0 L74,-7 L79,11 L5,18 Z","#EDE4CE",.9)}
+   <path d="M0,0 L74,-7 L79,11 L5,18 Z" fill="none" stroke="#16262A" stroke-width="1.2"/>
+   <path d="M37,-3 L42,15" stroke="#16262A" stroke-width="1"/></g>`:"";
+ const laptop=S.act==="work"?`<g transform="translate(120,340)">
+   ${WC.washM(id,"M0,30 L96,30 L110,46 L-14,46 Z","#DDE4E4",.9)}
+   <path d="M0,30 L96,30 L110,46 L-14,46 Z" fill="none" stroke="#16262A" stroke-width="1.2"/>
+   <rect x="6" y="-6" width="86" height="36" rx="2" fill="#EAF2F5" stroke="#16262A" stroke-width="1.2"/></g>`:"";
+ const plate=S.act==="meal"?`<g transform="translate(158,376)">
+   ${WC.washM(id,"M-48,0 a48,13 0 1,0 96,0 a48,13 0 1,0 -96,0 Z","#F3F0E6",.95)}
+   <ellipse rx="48" ry="13" fill="none" stroke="#16262A" stroke-width="1.2"/>
+   ${WC.washM(id,"M-26,-3 a26,7 0 1,0 52,0 a26,7 0 1,0 -52,0 Z","#DCCEB2",.85)}</g>`:"";
+ const rain=S.weather==="rain"?[...Array(26)].map((_,i)=>`<line x1="${52+i*22}" y1="${58+(i%5)*30}" x2="${45+i*22}" y2="${96+(i%5)*30}" stroke="#8FB0C4" stroke-width="1.2" opacity=".55"/>`).join(""):"";
+ const snow=S.weather==="snow"?[...Array(28)].map((_,i)=>`<circle cx="${50+i*21}" cy="${58+((i*37)%210)}" r="${1.6+(i%3)*.7}" fill="#B8CEDA" opacity=".6"/>`).join(""):"";
+ return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${sceneLabel()}">
+  ${WC.defs(id)}<rect width="${W}" height="${H}" fill="#fff"/>
+  <clipPath id="win"><rect x="46" y="34" width="568" height="248"/></clipPath>
+  <g clip-path="url(#win)">
+   ${WC.bloom(id,330,120,300,130,sky[0],.95)}
+   ${WC.bloom(id,330,250,320,90,sky[1],.8)}
+   ${S.weather!=="clear"?WC.bloom(id,240,116,140,40,"#E6EAEC",.7)+WC.bloom(id,430,94,160,44,"#EDF0F1",.6):""}
+   ${night?`${WC.washM(id,"M496,66 a24,24 0 1,0 .1,0 Z","#F3EFDF",.9)}<circle cx="486" cy="60" r="21" fill="#fff"/>`
+     :WC.bloom(id,sunX,sunY,40,38,"#F7E3B8",.95)}
+   ${rain}${snow}
+   ${WC.bloom(id,120,250,90,60,"#D9E4D6",.6)}
+  </g>
+  <rect x="46" y="34" width="568" height="248" fill="none" stroke="#16262A" stroke-width="6"/>
+  <line x1="330" y1="34" x2="330" y2="282" stroke="#16262A" stroke-width="4"/>
+  ${WC.washM(id,`M0,294 L${W},294 L${W},${H} L0,${H} Z`,"#D4B48C",.6)}
+  <line x1="0" y1="292" x2="${W}" y2="292" stroke="#16262A" stroke-width="1.4"/>
+  <g transform="translate(600,240)">
+   ${WC.leaf(id,0,84,-30,64,26,"#4E6B4A")}${WC.leaf(id,0,84,22,74,28,"#6E8B54")}
+   <path d="M0,84 L0,36" stroke="#4E6B4A" stroke-width="2.4"/>
+   ${WC.washM(id,"M-16,84 L16,84 L12,110 L-12,110 Z","#B08A5E",.9)}</g>
+  ${plate}${laptop}${book}
+  <g transform="translate(330,356)">${cups[S.vessel]}${steam}</g>
+  ${second}${third}
+ </svg>`;
+}
+function sceneLabel(){
+ const w={clear:"晴れ",cloud:"曇り",rain:"雨",snow:"雪"}[S.weather];
+ const c={alone:"ひとり",pair:"ふたり",guests:"来客"}[S.company];
+ const a={read:"本を読む",work:"作業する",talk:"話す",rest:"休む",meal:"食後"}[S.act];
+ return `${S.hour}時・${w}・${c}・${a}の場面`;
+}
+function sceneTarget(){
+ const h=S.hour, base={acidity:3,bitterness:4,sweetness:6.5,body:5.5,aroma:6.5}, why=[];
+ if(h<9){base.acidity+=1.4;base.sweetness+=1;base.bitterness-=.6;base.aroma+=1;why.push("朝は味覚感度が高く刺激が強く出るため、苦味を下げ、甘さと香りで満足を作ります。");}
+ else if(h<14){base.bitterness+=.6;base.body+=.5;why.push("昼は食事や活動の間に飲むため、輪郭を保てる苦味とコクを少し上げます。");}
+ else if(h<18){base.sweetness+=1;base.body+=.5;base.acidity-=.5;why.push("午後は休憩の一杯として甘さとコクを上げ、酸を控えます。");}
+ else {base.bitterness+=.4;base.body+=1;base.acidity-=1.2;base.aroma-=.5;why.push("夜は明るい酸を落とし、重心の低い甘さとコクへ寄せます。");}
+ if(S.weather==="rain"||S.weather==="snow"){base.body+=.8;base.acidity-=.5;why.push("雨や雪の日は室温と気分が下がるため、コクを上げて温度感を補います。");}
+ if(S.weather==="clear"&&h<12){base.aroma+=.5;why.push("晴れの午前は、香りの立ち上がりが体験の中心になります。");}
+ if(S.company==="guests"){base.acidity-=.6;base.bitterness-=.5;base.sweetness+=.5;why.push("来客時は好みの分散が大きいため、尖りを減らして許容範囲の広い中庸へ寄せます。");}
+ if(S.company==="pair"){why.push("ふたりなら2杯分の抽出になるため、粉量と湯量を倍にしても比率と時間は保ちます。");}
+ if(S.act==="work"){base.bitterness+=.5;base.body+=.5;base.aroma-=.5;why.push("作業中は長時間で温度が下がるため、冷めても薄く感じない設計にします。");}
+ if(S.act==="read"){base.aroma+=.6;base.bitterness-=.3;why.push("読書は静かな時間のため、香りを主役にして苦味は控えます。");}
+ if(S.act==="meal"){base.acidity+=.8;base.body+=.6;base.sweetness-=.5;why.push("食後は口内の脂質を切るため、酸とコクをやや上げます。");}
+ if(S.act==="talk"){base.bitterness-=.4;base.sweetness+=.4;why.push("会話中は、会話を邪魔しない穏やかな一杯へ寄せます。");}
+ if(S.act==="rest"){base.sweetness+=.8;why.push("休息では、甘さの知覚が満足度に効きます。");}
+ const v={mug:{body:.4,note:"マグは容量が大きく冷めやすいので、やや高めの濃度で設計します。"},
+          cup:{aroma:.4,note:"カップ＆ソーサーは口径が広く香りが立つので、抽出直後の香気を活かします。"},
+          glass:{acidity:.5,body:-.6,note:"グラス（アイス）は低温で甘さと香りの知覚が下がるため、濃度を上げて酸を残します。"}}[S.vessel];
+ for(const k in v) if(k!=="note") base[k]+=v[k];
+ why.push(v.note);
+ for(const k in base) base[k]=clamp(Math.round(base[k]*10)/10,0,10);
+ const serve={temp:S.vessel==="glass"?"氷上に落として急冷":h<9?"88–90℃で提供":"85–88℃で提供",
+   tds:S.vessel==="glass"?"1.45–1.60%（融解希釈を見込む）":S.act==="work"?"1.30–1.45%":"1.20–1.35%",
+   vol:S.company==="alone"?"1杯 150–180 mL":S.company==="pair"?"2杯 300–360 mL":"3杯以上・同時抽出",
+   caf:h>=18?"デカフェまたは半量ブレンドを推奨":"制限なし"};
+ return {target:base,why,serve};
+}
+
+/* ==================== レーダー（図解） ==================== */
+function radar(sets,size=340){
+ const c=size/2,R=size*.33,n=AX.length;
+ const pt=(i,r)=>{const a=-Math.PI/2+i*2*Math.PI/n;return [c+Math.cos(a)*r,c+Math.sin(a)*r];};
+ const poly=v=>AX.map(([k],i)=>pt(i,R*(clamp(v[k],0,10)/10)).map(x=>x.toFixed(1)).join(",")).join(" ");
+ let g=`<rect width="${size}" height="${size}" fill="#fff"/>`;
+ [.25,.5,.75,1].forEach(f=>g+=`<polygon points="${AX.map((_,i)=>pt(i,R*f).map(x=>x.toFixed(1)).join(",")).join(" ")}" fill="none" stroke="#E3E8E7"/>`);
+ let lab="";AX.forEach(([k,l],i)=>{const[x,y]=pt(i,R),[lx,ly]=pt(i,R+24);
+  g+=`<line x1="${c}" y1="${c}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#E3E8E7"/>`;
+  lab+=`<text x="${lx.toFixed(1)}" y="${(ly+4).toFixed(1)}" text-anchor="middle" font-size="12.5" fill="#5C7072" font-family="Zen Old Mincho, serif">${l}</text>`;});
+ const band=sets.band?`<polygon points="${poly(Object.fromEntries(AX.map(([k])=>[k,sets.band[k].hi])))}" fill="#3E7C93" fill-opacity=".10"/>
+   <polygon points="${poly(Object.fromEntries(AX.map(([k])=>[k,sets.band[k].lo])))}" fill="#fff"/>`:"";
+ const line=(v,color,dash,w=1.8)=>v?`<polygon points="${poly(v)}" fill="none" stroke="${color}" stroke-width="${w}" ${dash?`stroke-dasharray="${dash}"`:""}/>`:"";
+ return `<svg viewBox="0 0 ${size} ${size}" width="100%" role="img" aria-label="味の予測と目標の比較図">
+  ${g}${band}${line(sets.linear,"#9FB0B0","2 4")}${line(sets.sim,"#16495D",null,2.2)}${line(sets.target,"#A9302A","5 4")}${lab}</svg>`;
+}
+
+/* ==================== 場面タブ ==================== */
+function renderScene(){
+ const st=sceneTarget();
+ S.target=st.target;
+ $("#c-scene").innerHTML=`
+ <p class="eyebrow">Scene composer</p><h2 class="h-sec">その一杯が置かれる場面を、先に決める</h2>
+ <p class="lead">「集中したい」のような言葉から始めると、条件が曖昧なままになります。時間・光・同席者・器・行為を動かすと、絵と一緒に味の目標と提供条件が変わります。</p>
+ <div class="grid" style="grid-template-columns:1.25fr .75fr;margin-top:24px;align-items:start">
+  <div>
+   <div class="scene-frame">${sceneSVG()}</div>
+   <div class="card" style="margin-top:14px">
+    <div class="rowlab"><span>時刻</span><b id="hourLab">${S.hour}:00</b></div>
+    <input type="range" min="4" max="23" value="${S.hour}" id="hour" aria-label="時刻">
+    <div class="grid" style="grid-template-columns:1fr 1fr;gap:14px;margin-top:14px">
+     <div><p class="note">天気</p><div class="chips" style="margin-top:5px">${[["clear","晴れ"],["cloud","曇り"],["rain","雨"],["snow","雪"]].map(([v,l])=>`<button data-set="weather" data-v="${v}" aria-pressed="${S.weather===v}">${l}</button>`).join("")}</div></div>
+     <div><p class="note">誰と</p><div class="chips" style="margin-top:5px">${[["alone","ひとり"],["pair","ふたり"],["guests","来客"]].map(([v,l])=>`<button data-set="company" data-v="${v}" aria-pressed="${S.company===v}">${l}</button>`).join("")}</div></div>
+     <div><p class="note">器</p><div class="chips" style="margin-top:5px">${[["mug","マグ"],["cup","カップ&ソーサー"],["glass","グラス（アイス）"]].map(([v,l])=>`<button data-set="vessel" data-v="${v}" aria-pressed="${S.vessel===v}">${l}</button>`).join("")}</div></div>
+     <div><p class="note">していること</p><div class="chips" style="margin-top:5px">${[["read","読む"],["work","作業"],["talk","話す"],["rest","休む"],["meal","食後"]].map(([v,l])=>`<button data-set="act" data-v="${v}" aria-pressed="${S.act===v}">${l}</button>`).join("")}</div></div>
+    </div>
+   </div>
+  </div>
+  <div>
+   <div class="card feature"><p class="eyebrow">この場面が求める一杯</p>
+    <div style="max-width:320px;margin:6px auto 0">${radar({target:S.target},300)}</div>
+    <table style="margin-top:8px">${AX.map(([k,l])=>`<tr><td style="color:var(--soft)">${l}</td><td><div class="bar"><i style="width:${S.target[k]*10}%;background:var(--cherry)"></i></div></td><td class="mono" style="width:36px;text-align:right">${S.target[k]}</td></tr>`).join("")}</table>
+   </div>
+   <div class="card" style="margin-top:14px"><p class="eyebrow">提供条件</p>
+    <table style="margin-top:8px"><tbody>
+     <tr><td style="width:82px;color:var(--soft)">提供温度</td><td>${st.serve.temp}</td></tr>
+     <tr><td style="color:var(--soft)">濃度目標</td><td>${st.serve.tds}</td></tr>
+     <tr><td style="color:var(--soft)">量</td><td>${st.serve.vol}</td></tr>
+     <tr><td style="color:var(--soft)">カフェイン</td><td>${st.serve.caf}</td></tr>
+    </tbody></table></div>
+   <div class="card" style="margin-top:14px"><p class="eyebrow">なぜこの目標になるか</p>
+    <ul style="margin:10px 0 0;padding-left:18px;font-size:14px;line-height:1.95">${st.why.map(w=>`<li>${esc(w)}</li>`).join("")}</ul>
+    <p class="note" style="margin-top:8px">これらは経験則（示唆レベル）です。実飲の記録が溜まれば係数は個人ごとに更新されます。現時点では、あなたの評価より前に確定した仮説として扱ってください。</p>
+    <button class="btn" style="width:100%;margin-top:14px" id="toBlend">この目標で配合を設計する</button></div>
+  </div>
+ </div>`;
+ $("#hour").oninput=e=>{S.hour=Number(e.target.value);renderScene();};
+ $$("[data-set]").forEach(b=>b.onclick=()=>{S[b.dataset.set]=b.dataset.v;renderScene();});
+ $("#toBlend").onclick=()=>go("blend");
+}
+
+/* ==================== 配合タブ ==================== */
+function renderBlend(){
+ normalize();
+ const r=recipe(), sim=simulate(r), per=perceive(sim,{kh:S.kh,bias:S.bias}), lin=linearBlend(r), band=montecarlo(r,140);
+ const delta={};AX.forEach(([k])=>delta[k]=per[k]-lin[k]);
+ const maxD=Math.max(...AX.map(([k])=>Math.abs(delta[k])));
+ const nNeed=sampleSize(Math.max(.05,maxD),S.sd);
+ const detect=nNeed<=60;
+ const inTarget=(sim.ey>=18&&sim.ey<=22&&sim.tds>=1.15&&sim.tds<=1.35);
+ const dist=Math.sqrt(AX.reduce((a,[k])=>a+Math.pow(per[k]-S.target[k],2),0)/5).toFixed(2);
+
+ $("#c-blend").innerHTML=`
+ <p class="eyebrow">Blend simulator</p><h2 class="h-sec">配合と焙煎度と抽出条件から、味を計算する</h2>
+ <p class="lead">生豆組成、焙煎による成分変換、粒径、成分別の抽出速度、知覚の四層で計算します。加重平均との差、カップ内比率のずれ、予測のばらつきを同時に表示します。</p>
+
+ <div class="grid" style="grid-template-columns:.95fr 1.05fr;margin-top:24px;align-items:start">
+  <div class="card">
+   <h3 style="font-size:17px">配合</h3>
+   <div id="parts" style="margin-top:10px"></div>
+   <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+     <button class="btn ghost sm" id="addPart" ${S.parts.length>=3?"disabled":""}>豆を追加（最大3）</button>
+     <button class="btn ghost sm" id="optBtn">目標に最も近い配合を探索</button></div>
+
+   <h3 style="font-size:17px;margin-top:24px">抽出条件</h3>
+   <label class="f"><span>器具</span><select id="method">${Object.keys(METHODS).map(m=>`<option ${S.method===m?"selected":""}>${m}</option>`).join("")}</select></label>
+   <div class="rowlab"><span>挽き目（中央粒径）</span><b>${S.d} µm</b></div><input type="range" id="d" min="350" max="1000" step="10" value="${S.d}">
+   <div class="rowlab"><span>湯温</span><b>${S.temp} ℃</b></div><input type="range" id="temp" min="80" max="96" step="1" value="${S.temp}">
+   <div class="rowlab"><span>接触時間</span><b>${S.time} 秒</b></div><input type="range" id="time" min="60" max="360" step="5" value="${S.time}">
+   <div class="grid" style="grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+     <label class="f" style="margin:0"><span>粉量 g</span><input type="number" id="dose" value="${S.dose}" step="0.5"></label>
+     <label class="f" style="margin:0"><span>湯量 g</span><input type="number" id="water" value="${S.water}" step="5"></label></div>
+   <div class="rowlab"><span>水のアルカリ度（酸の緩衝）</span><b>${S.kh} mg/L</b></div><input type="range" id="kh" min="0" max="150" step="5" value="${S.kh}">
+  </div>
+
+  <div>
+   <div class="card feature">
+    <p class="eyebrow">予測</p>
+    <div style="max-width:340px;margin:4px auto 0">${radar({target:S.target,sim:per,linear:lin,band},330)}</div>
+    <div class="legend" style="justify-content:center">
+     <span><i style="background:#A9302A"></i>場面の目標</span><span><i style="background:#16495D"></i>シミュレーション</span><span><i style="background:#9FB0B0"></i>投入比率の加重平均</span></div>
+    <table style="margin-top:12px">
+     <thead><tr><th>軸</th><th>目標</th><th>予測（90%区間）</th><th>加重平均</th><th>差</th></tr></thead>
+     <tbody>${AX.map(([k,l])=>`<tr><td>${l}</td><td class="mono" style="color:var(--cherry)">${S.target[k].toFixed(1)}</td>
+       <td class="mono">${per[k].toFixed(2)} <span style="color:var(--faint)">(${band[k].lo.toFixed(1)}–${band[k].hi.toFixed(1)})</span></td>
+       <td class="mono" style="color:var(--faint)">${lin[k].toFixed(2)}</td>
+       <td class="mono" style="color:${Math.abs(delta[k])>=.3?"var(--indigo)":"var(--faint)"}">${delta[k]>=0?"+":""}${delta[k].toFixed(2)}</td></tr>`).join("")}</tbody></table>
+    <p class="note" style="margin-top:10px">目標との距離（RMSE）：<span class="mono">${dist}</span>　／　抽出収率 ${sim.ey.toFixed(1)}%（${band.ey.lo.toFixed(1)}–${band.ey.hi.toFixed(1)}）・濃度 ${sim.tds.toFixed(2)}%（${band.tds.lo.toFixed(2)}–${band.tds.hi.toFixed(2)}）${inTarget?' <span class="pill good">目標帯</span>':' <span class="pill warn">目標帯の外</span>'}</p>
+   </div>
+
+   <div class="card" style="margin-top:14px">
+    <p class="eyebrow">ホッパー内の比率 ≠ カップ内の比率</p>
+    <table style="margin-top:8px"><thead><tr><th>豆</th><th>投入</th><th>カップ内の寄与</th><th>実効粒径</th></tr></thead><tbody>
+    ${sim.cup.map(c=>`<tr><td>${esc(c.name)}<span class="note">　焙煎度 ${(c.p*100).toFixed(0)}</span></td><td class="mono">${(c.in*100).toFixed(0)}%</td>
+      <td><div class="bar"><i style="width:${c.out*100}%"></i></div><span class="mono">${(c.out*100).toFixed(1)}%</span></td>
+      <td class="mono">${c.d.toFixed(0)} µm</td></tr>`).join("")}</tbody></table>
+    <p class="note" style="margin-top:8px">同じミル設定でも、浅煎りの豆は硬く粗く砕けます。深煎りは可溶性成分が多く速く溶けます。この二つのために、カップの中の比率は投入比率からずれます。原価計算と味の設計は、このカップ内比率で行うべきです。</p>
+   </div>
+
+   <div class="card" style="margin-top:14px">
+    <p class="eyebrow">どこで科学が効き、どこで効かないか</p>
+    ${detect?`<div class="callout good" style="margin-top:10px">加重平均との差は検出可能です。最大 ${maxD.toFixed(2)} 点で、標準偏差 ${S.sd} のもとで各群 <span class="mono">${nNeed} 名</span>で検定できます。配合比の設計に、成分レベルの計算を使う価値があります。</div>`
+      :`<div class="callout warn" style="margin-top:10px">加重平均との差は検出できません。最大でも ${maxD.toFixed(2)} 点で、検出には各群 <span class="mono">${nNeed} 名</span>が必要となり現実的ではありません。この条件では「単品の官能値を投入比率で加重平均すれば足りる」という帰無仮説を棄却できず、配合比だけを動かす設計に成分モデルは要りません。</div>`}
+    <p class="note" style="margin-top:10px">一方、同じモデルで条件を振ると、差が大きい操作がはっきりします。実飲試験に使う予算は、下表の上位に投じるべきです。</p>
+    <table style="margin-top:8px"><thead><tr><th>操作</th><th>最も動く軸</th><th>予測差</th><th>必要n（各群）</th><th>判定</th></tr></thead><tbody>
+    ${sensitivity().map(v=>`<tr><td>${v.label}</td><td>${v.axis}</td><td class="mono">${v.delta.toFixed(2)}</td><td class="mono">${v.n>999?"1000+":v.n}</td>
+      <td>${v.delta>=.8?'<span class="pill good">誰でも分かる</span>':v.delta>=.4?'<span class="pill brass">訓練パネルなら</span>':'<span class="pill warn">検出不能</span>'}</td></tr>`).join("")}</tbody></table>
+    <p class="note" style="margin-top:8px">差が小さいと判定された操作に時間と費用をかけないことも、このモデルの仕事です。</p>
+   </div>
+
+   <div class="card" style="margin-top:14px">
+    <p class="eyebrow">なぜこの味になるか（支配要因）</p>
+    <ul style="margin:10px 0 0;padding-left:18px;font-size:14px;line-height:1.95">${explain(sim,per,r).map(x=>`<li>${x}</li>`).join("")}</ul>
+    <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+      <button class="btn sm" id="toVerify">この予測を登録して検証へ</button>
+      <button class="btn ghost sm" id="saveA">Aとして保存</button><button class="btn ghost sm" id="saveB">Bとして保存</button></div>
+   </div>
+  </div>
+ </div>`;
+
+ renderParts();
+ $("#method").onchange=e=>{S.method=e.target.value;const m=METHODS[S.method];S.d=m.d;S.temp=m.temp;S.time=m.time;S.dose=m.dose;S.water=m.water;renderBlend();};
+ ["d","temp","time","kh"].forEach(k=>$("#"+k).oninput=e=>{S[k]=Number(e.target.value);renderBlend();});
+ ["dose","water"].forEach(k=>$("#"+k).onchange=e=>{S[k]=Number(e.target.value)||S[k];renderBlend();});
+ $("#addPart").onclick=()=>{const used=S.parts.map(p=>p.id);const nb=BEANS.find(b=>used.indexOf(b.id)<0);
+   if(nb){S.parts.push({id:nb.id,ratio:.2,p:.5});normalize();renderBlend();}};
+ $("#optBtn").onclick=()=>{
+   const base={dose:S.dose,water:S.water,time:S.time,agit:METHODS[S.method].agit,kh:S.kh,retain:METHODS[S.method].retain};
+   const best=optimize(S.target,S.parts.map(p=>({bean:bean(p.id),p:p.p})),base);
+   S.parts.forEach((p,i)=>p.ratio=best.ratios[i]); S.temp=best.temp; S.d=best.d; renderBlend();
+   toast(`探索完了：${S.parts.map((p,i)=>bean(p.id).short+" "+Math.round(best.ratios[i]*100)+"%").join(" / ")}・${best.temp}℃・${best.d}µm`);
+ };
+ $("#toVerify").onclick=()=>{registerPrediction();go("verify");};
+ $("#saveA").onclick=()=>{S.saved.A=snapshot();toast("Aとして保存しました。");};
+ $("#saveB").onclick=()=>{S.saved.B=snapshot();toast("Bとして保存しました。検証タブで比較できます。");};
+}
+function renderParts(){
+ $("#parts").innerHTML=S.parts.map((p,i)=>{const b=bean(p.id);return `
+  <div class="part">
+   <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
+    <select data-bean="${i}" style="width:auto;flex:1">${BEANS.map(x=>`<option value="${x.id}" ${x.id===p.id?"selected":""}>${x.name}</option>`).join("")}</select>
+    ${S.parts.length>1?`<button class="btn ghost sm" data-del="${i}">外す</button>`:""}</div>
+   <div class="rowlab" style="margin-top:8px"><span>配合比</span><b>${Math.round(p.ratio*100)}%</b></div>
+   <input type="range" data-ratio="${i}" min="0" max="100" value="${Math.round(p.ratio*100)}">
+   <div class="rowlab"><span>焙煎度（0＝浅 … 100＝深）</span><b>${Math.round(p.p*100)}　${p.p<.3?"浅煎り":p.p<.55?"中煎り":p.p<.75?"中深煎り":"深煎り"}</b></div>
+   <input type="range" data-roast="${i}" min="5" max="95" value="${Math.round(p.p*100)}">
+   <p class="note" style="margin-top:6px">${esc(b.process)}／酸 ${b.comp.citric+b.comp.malic}・糖 ${b.comp.sucrose}・CGA ${b.comp.cga}・脂質 ${b.comp.lipid}（生豆 mg/g）</p>
+  </div>`;}).join("");
+ $$("[data-bean]").forEach(s=>s.onchange=()=>{S.parts[s.dataset.bean].id=s.value;renderBlend();});
+ $$("[data-del]").forEach(b=>b.onclick=()=>{S.parts.splice(Number(b.dataset.del),1);normalize();renderBlend();});
+ $$("[data-ratio]").forEach(r=>r.oninput=()=>{S.parts[r.dataset.ratio].ratio=Number(r.value)/100;renderBlend();});
+ $$("[data-roast]").forEach(r=>r.oninput=()=>{S.parts[r.dataset.roast].p=Number(r.value)/100;renderBlend();});
+}
+function sensitivity(){
+ const base=perceive(simulate(recipe()),{kh:S.kh,bias:S.bias});
+ const variants=[
+  ["挽き目を100µm細かく",()=>Object.assign(recipe(),{d:S.d-100})],
+  ["湯温を+3℃",()=>Object.assign(recipe(),{temp:S.temp+3})],
+  ["接触時間を+40秒",()=>Object.assign(recipe(),{time:S.time+40})],
+  ["主成分の焙煎度を+10",()=>{const r=recipe();r.parts=r.parts.map((x,i)=>i===0?Object.assign({},x,{p:clamp(x.p+.1,0,1)}):x);return r;}],
+  ["配合比を20ポイント入替",()=>{const r=recipe();if(r.parts.length<2)return r;
+     r.parts=r.parts.map((x,i)=>i===0?Object.assign({},x,{ratio:clamp(x.ratio+.2,0,1)}):i===1?Object.assign({},x,{ratio:clamp(x.ratio-.2,0,1)}):x);return r;}],
+  ["水のアルカリ度を+50",()=>Object.assign(recipe(),{kh:S.kh+50})]
+ ];
+ return variants.map(([label,f])=>{
+  const r=f(); const p2=perceive(simulate(r),{kh:r.kh,bias:S.bias});
+  let best=["",0]; AX.forEach(([k,l])=>{const d=Math.abs(p2[k]-base[k]); if(d>best[1]) best=[l,d];});
+  return {label,axis:best[0],delta:best[1],n:sampleSize(Math.max(.05,best[1]),S.sd)};
+ }).sort((a,b)=>b.delta-a.delta);
+}
+function explain(sim,per,r){
+ const c=sim.conc,out=[];
+ const dom=[["lactone","クロロゲン酸ラクトン（中煎りで極大の苦味）",c.lactone*1.5],["phenyl","フェニルインダン（深煎りの重い苦味）",c.phenyl*4],
+   ["quinic","キナ酸（渋み・収れん）",c.quinic*1.4],["caramel","カラメル・メラノイジン（甘さと厚み）",c.caramel],
+   ["citric","クエン酸・リンゴ酸（明るい酸）",(c.citric+c.malic)],["poly","多糖・メラノイジン（コク）",c.poly*.25]]
+   .sort((a,b)=>b[2]-a[2]).slice(0,3);
+ out.push(`いま味を支配している成分は、${dom.map(d=>d[1]).join("、")}です。`);
+ const hot=r.temp>=93,fine=r.d<=500,long=r.time>=220;
+ if(hot||fine||long) out.push(`${[hot?"高い湯温":"",fine?"細かい挽き目":"",long?"長い接触時間":""].filter(Boolean).join("と")}により、遅れて溶ける苦味成分の抽出が進んでいます（収率 ${sim.ey.toFixed(1)}%）。`);
+ else out.push(`抽出は穏やかで、早く溶ける酸と糖の比率が高い状態です（収率 ${sim.ey.toFixed(1)}%）。`);
+ const dark=r.parts.filter(p=>p.p>.7),light=r.parts.filter(p=>p.p<.35);
+ if(dark.length&&light.length) out.push(`焙煎度の離れた豆を混ぜているため、カップ内では深煎り側の寄与が投入比率より大きくなります。焙煎度を揃えるか、深煎り側の投入比率を下げると設計どおりに近づきます。`);
+ if(r.kh>60) out.push(`アルカリ度 ${r.kh} mg/L により、酸の知覚が約 ${(100-100/(1+0.0085*r.kh)).toFixed(0)}% 抑えられています。酸を残したい場合は水を替えるのが最短です。`);
+ out.push(`香りは ${["floral","fruity","nutty","cocoa","spice","roasty"].map(k=>[k,sim.volC[k]]).sort((a,b)=>b[1]-a[1])[0][0]} 系が最大です。`);
+ return out;
+}
+function snapshot(){
+ const r=recipe(),sim=simulate(r),per=perceive(sim,{kh:S.kh,bias:S.bias});
+ return {label:S.parts.map(p=>`${bean(p.id).short}${Math.round(p.ratio*100)}%(焙${Math.round(p.p*100)})`).join("+"),
+   method:S.method,d:S.d,temp:S.temp,time:S.time,ey:sim.ey,tds:sim.tds,per,ts:new Date().toLocaleString("ja-JP")};
+}
+
+/* ==================== 検証タブ ==================== */
+function registerPrediction(){
+ S.registered=Object.assign(snapshot(),{id:"PR-"+Date.now().toString(36).toUpperCase().slice(-6),model:"blend-0.4.0",target:Object.assign({},S.target)});
+}
+function renderVerify(){
+ const reg=S.registered, A=S.saved.A, B2=S.saved.B;
+ const crit=triangleCritical(S.panelN);
+ const mae=S.records.length?AX.map(([k])=>S.records.reduce((a,r)=>a+Math.abs(r.actual[k]-r.pred[k]),0)/S.records.length):null;
+ const maeAll=mae?(mae.reduce((a,b)=>a+b,0)/5).toFixed(2):"—";
+ let abRows="";
+ if(A&&B2){abRows=AX.map(([k,l])=>{const d=Math.abs(A.per[k]-B2.per[k]);const n=sampleSize(Math.max(.05,d),S.sd);
+   return `<tr><td>${l}</td><td class="mono">${A.per[k].toFixed(2)}</td><td class="mono">${B2.per[k].toFixed(2)}</td><td class="mono">${d.toFixed(2)}</td>
+   <td class="mono">${n}</td><td>${d>=.8?'<span class="pill good">明確に識別可能</span>':d>=.4?'<span class="pill brass">訓練パネルなら可能</span>':'<span class="pill warn">識別不能とみなす</span>'}</td></tr>`;}).join("");}
+
+ $("#c-verify").innerHTML=`
+ <p class="eyebrow">Falsification workbench</p><h2 class="h-sec">「本当にその味になるか」を、議論できる形にする</h2>
+ <p class="lead">シミュレーションだけでは何も証明できません。予測を先に固定し、識別できる差かを判定し、実飲で残差を取り、外れたら係数を直す。この往復がなければ、科学の見た目をした装飾にしかなりません。</p>
+
+ <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:24px;align-items:start">
+  <div class="card"><p class="eyebrow">① 予測の事前登録</p>
+   ${reg?`<h3 style="font-size:17px;margin-top:10px">${esc(reg.label)}</h3>
+     <p class="note">${reg.method}／${reg.d}µm・${reg.temp}℃・${reg.time}秒　登録 ${reg.ts}</p>
+     <table style="margin-top:10px"><thead><tr><th>軸</th><th>予測</th><th>目標</th></tr></thead><tbody>
+     ${AX.map(([k,l])=>`<tr><td>${l}</td><td class="mono">${reg.per[k].toFixed(2)}</td><td class="mono">${reg.target[k].toFixed(1)}</td></tr>`).join("")}</tbody></table>
+     <p class="note" style="margin-top:8px"><span class="mono">${reg.id} / model ${reg.model}</span>　実飲の前に固定された値です。後から書き換えられません。</p>`
+    :`<p class="note" style="margin-top:10px">まだ登録がありません。配合タブで「この予測を登録して検証へ」を押してください。実飲の後に予測を作ると、検証になりません。</p>`}
+  </div>
+  <div class="card"><p class="eyebrow">② 差は識別できるか（三点識別法）</p>
+   <label class="f"><span>パネル人数 n</span><input type="number" id="panelN" value="${S.panelN}" min="6" max="120"></label>
+   <div class="callout" style="margin-top:10px">n=${S.panelN} のとき、有意水準5%で「識別できた」と言うには <strong class="mono">${crit}名以上</strong>の正答が必要です（当てずっぽうの正答率は1/3）。正答が ${crit-1} 名以下なら、二つのブレンドは区別できていないと扱います。</div>
+   <label class="f"><span>個人差の標準偏差（記述評価・10点尺度）</span><input type="number" id="sd" value="${S.sd}" step="0.1"></label>
+   <p class="note">記述評価で Δ=1.0 点の差を検出するには各群 ${sampleSize(1,S.sd)} 名、Δ=0.5 点なら ${sampleSize(.5,S.sd)} 名、Δ=0.2 点なら ${sampleSize(.2,S.sd)} 名が必要です。</p>
+  </div>
+ </div>
+
+ <div class="card" style="margin-top:16px"><p class="eyebrow">③ A / B の比較設計</p>
+  ${A&&B2?`<p class="note" style="margin-top:8px">A：${esc(A.label)}（${A.temp}℃/${A.d}µm）　B：${esc(B2.label)}（${B2.temp}℃/${B2.d}µm）</p>
+   <table style="margin-top:10px"><thead><tr><th>軸</th><th>A</th><th>B</th><th>予測差</th><th>必要n（各群）</th><th>判定</th></tr></thead><tbody>${abRows}</tbody></table>
+   <p class="note" style="margin-top:8px">予測差がどの軸でも0.4点未満なら、その比較は実施しても情報が得られません。条件を離してから試験を組んでください。</p>`
+   :`<p class="note" style="margin-top:10px">配合タブで2つの条件を「Aとして保存」「Bとして保存」すると、識別可能性と必要人数をここで判定します。</p>`}
+ </div>
+
+ <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:16px;align-items:start">
+  <div class="card"><p class="eyebrow">④ 実飲の記録（残差を取る）</p>
+   ${reg?`<p class="note" style="margin-top:8px">${esc(reg.label)} を飲んだ結果を入力してください。予測との差が、このモデルの誤差です。</p>
+    ${AX.map(([k,l])=>`<div class="rowlab"><span>${l}</span><b id="a-${k}-v">5.0</b></div><input type="range" id="a-${k}" min="0" max="10" step="0.5" value="5">`).join("")}
+    <button class="btn" style="width:100%;margin-top:14px" id="submitAct">残差を計算して記録する</button>`
+    :`<p class="note" style="margin-top:10px">先に予測を登録してください。</p>`}
+  </div>
+  <div class="card"><p class="eyebrow">⑤ 誤差と校正</p>
+   ${S.records.length?`<p style="font-size:14px;margin-top:8px">記録 ${S.records.length} 件／平均絶対誤差 <strong class="mono">${maeAll}</strong> 点</p>
+    <table style="margin-top:10px"><thead><tr><th>軸</th><th>MAE</th><th>現在の校正値</th></tr></thead><tbody>
+    ${AX.map(([k,l],i)=>`<tr><td>${l}</td><td class="mono">${mae[i].toFixed(2)}</td><td class="mono">${S.bias[k]>=0?"+":""}${S.bias[k].toFixed(2)}</td></tr>`).join("")}</tbody></table>
+    <p class="note" style="margin-top:8px">校正は残差の40%だけを反映させています（過剰適合を避けるため）。校正値が大きいほど、モデルの構造自体を疑う必要があります。</p>
+    <table style="margin-top:10px"><thead><tr><th>日時</th><th>条件</th><th>予測→実飲（酸/苦/甘/コク/香）</th></tr></thead><tbody>
+    ${S.records.slice(-5).reverse().map(r=>`<tr><td class="mono">${r.ts}</td><td class="note">${esc(r.label)}</td>
+      <td class="mono">${AX.map(([k])=>`${r.pred[k].toFixed(1)}→${r.actual[k].toFixed(1)}`).join(" ")}</td></tr>`).join("")}</tbody></table>`
+    :`<p class="note" style="margin-top:10px">まだ記録がありません。1件目から誤差の推定が始まります。3件までは参考値で、10件を超えたあたりで軸ごとの偏りが見えてきます。</p>`}
+  </div>
+ </div>
+
+ <div class="card feature" style="margin-top:16px"><p class="eyebrow">⑥ このモデルを棄却する条件（先に決めておく）</p>
+  <ul style="margin:12px 0 0;padding-left:18px;font-size:14.5px;line-height:2">
+   <li>記録20件以上で、いずれかの軸のMAEが 1.5 点を超え続ける場合は、その軸の知覚モデルを棄却し、係数ではなく構造を作り直します。</li>
+   <li>モデルが識別可能（Δ≧0.8）と判定した条件対を訓練パネルが有意に識別できなかった場合は、抽出速度論のパラメータを疑います。</li>
+   <li>TDS実測値とモデル推定値の相関が r&lt;0.7 の場合は、保持係数と可溶化率の仮定が誤っています。</li>
+   <li>校正値の絶対値が 1.0 点を超える軸は、補正で隠さずモデル構造の欠落として公開します。</li>
+   <li>いずれかが成立した場合、その軸の予測を画面から取り下げて「未確定」と表示します。数値を残したまま注釈で逃げません。</li>
+  </ul>
+  <p class="note" style="margin-top:12px">この一覧を先に決めておくことが、事後的な言い訳を防ぐ唯一の方法です。ここが、レコメンドを出すだけの仕組みとの分かれ目になります。</p>
+ </div>`;
+
+ const pn=$("#panelN"); if(pn) pn.onchange=e=>{S.panelN=clamp(Number(e.target.value)||12,6,120);renderVerify();};
+ const sd=$("#sd"); if(sd) sd.onchange=e=>{S.sd=Math.max(.2,Number(e.target.value)||1.2);renderVerify();};
+ AX.forEach(([k])=>{const el=$("#a-"+k); if(el) el.oninput=e=>$("#a-"+k+"-v").textContent=Number(e.target.value).toFixed(1);});
+ const sb=$("#submitAct"); if(sb) sb.onclick=()=>{
+   const actual={}; AX.forEach(([k])=>actual[k]=Number($("#a-"+k).value));
+   const pred=S.registered.per;
+   S.records.push({ts:new Date().toLocaleString("ja-JP",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}),label:S.registered.label,pred:Object.assign({},pred),actual});
+   AX.forEach(([k])=>{const res=actual[k]-pred[k]; S.bias[k]=clamp(S.bias[k]*0.6+res*0.4,-2,2);});
+   renderVerify(); toast("記録しました。校正値を更新し、以後の予測に反映します。");
+ };
+}
+
+/* ==================== 共通 ==================== */
+function toast(m){let t=$("#toast");if(!t){t=document.createElement("div");t.id="toast";
+ t.style.cssText="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#16262A;color:#fff;padding:12px 20px;border-radius:2px;font-size:14px;z-index:80;max-width:92vw;text-align:center;transition:opacity .3s";
+ document.body.appendChild(t);} t.textContent=m; t.style.opacity="1";
+ clearTimeout(t._t); t._t=setTimeout(()=>t.style.opacity="0",3200);}
+const RENDER={scene:renderScene,blend:renderBlend,verify:renderVerify};
+function go(tab){S.tab=tab;$$(".pane").forEach(p=>p.classList.toggle("on",p.id==="p-"+tab));
+ $$("#tabs button").forEach(b=>b.setAttribute("aria-current",String(b.dataset.tab===tab)));RENDER[tab]();window.scrollTo(0,0);}
+function init(){
+ $("#tabs").innerHTML=`<a href="index.html">表紙</a><a href="soil-to-cup.html">土から一杯まで</a>`
+  +TABS.map(([id,l])=>`<button data-tab="${id}" aria-current="${S.tab===id}">${l}</button>`).join("");
+ $$("#tabs button").forEach(b=>b.onclick=()=>go(b.dataset.tab));
+ renderScene();
+}
+document.addEventListener("DOMContentLoaded",init);
+})();
+</script>
+</body>
+</html>
